@@ -92,6 +92,7 @@ export default class Parser {
     }
 
     drop() {
+        this.type= types.DROPPED;
         return this.map(() => []);
     }
 
@@ -122,17 +123,17 @@ export default class Parser {
 
     // Parser 'a 'c => unit -> Parser (List 'a) 'c
     rep() {
-        return repeatable(this, () => true, l => l !== 0);
+        return repeatable(new ArrayParser(this.parse), () => true, l => l !== 0);
     }
 
     // Parser 'a 'c => number -> Parser (List 'a) 'c
     occurrence(occurrence) {
-        return repeatable(this, l => l < occurrence, l => l === occurrence);
+        return repeatable(new ArrayParser(this.parse), l => l < occurrence, l => l === occurrence);
     }
 
     // Parser 'a 'c => unit -> Parser (List 'a) 'c
     optrep() {
-        return repeatable(this, () => true, () => true);
+        return repeatable(new ArrayParser(this.parse), () => true, () => true);
     }
 
     // Parser 'a 'c => Parser 'b 'a -> Parser 'b 'c
