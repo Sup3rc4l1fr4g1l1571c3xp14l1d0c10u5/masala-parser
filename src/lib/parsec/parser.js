@@ -18,6 +18,13 @@ import option from '../data/option';
 import list from '../data/list';
 
 import response from './response';
+import ArrayParser from "./array-parser";
+
+export const types = {
+    SIMPLE: Symbol('Simple Parser'),
+    ARRAY: Symbol('Array Parser'),
+    DROPPED: Symbol('Dropped Parser')
+};
 
 /**
  * Parser class
@@ -26,6 +33,7 @@ export default class Parser {
     // (Stream 'c -> number -> Response 'a 'c) -> Parser 'a 'c
     constructor(parse) {
         this.parse = parse;
+        this.type = types.SIMPLE;
     }
 
     // Parser 'a 'c => ('a -> Parser 'b 'c) -> Parser 'b 'c
@@ -56,11 +64,20 @@ export default class Parser {
         return this.filter(a => a === v);
     }
 
+    _arrayValue(value){
+        switch(this.type){
+            case types.ARRAY: return value;
+            case types.SIMPLE: return [value];
+            case types.DROPPED: return [];
+        }
+    }
+
+
     // Parser 'a 'c => Parser 'b 'c -> Parser ('a,'b) 'c
     then(p) {
         return this.flatMap(a =>
             p.map(b => {
-                let result = list(a).append(list(b)).array();
+                let result = [...this._arrayValue(a), ...p._arrayValue(b)];
                 if (result.length === 1) {
                     return result[0];
                 } else {
@@ -190,16 +207,16 @@ function choice(self, f) {
 
 // Parser 'a 'c -> unit -> Parser (List 'a) 'c
 function repeatable(self, occurrences, accept) {
-    return new Parser((input, index = 0) => {
-        var consumed = false,
-            value = list(),
+    return new ArrayParser((input, index = 0) => {
+        let consumed = false,
+            value = [],
             offset = index,
             current = self.parse(input, index),
             occurrence = 0;
 
         while (current.isAccepted() && occurrences(occurrence)) {
             occurrence += 1;
-            value = value.append(list(current.value));
+            value = value.push(current.value);
             consumed = consumed || current.consumed;
             offset = current.offset;
             current = self.parse(input, current.offset);
