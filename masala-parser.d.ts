@@ -67,7 +67,7 @@ export interface SingleResponse<T> extends Response<T> {
     value: T
 }
 
-export interface VoidResponse<T>extends Response<T> {
+export interface DroppedResponse<T>extends Response<T> {
     value: void
 }
 
@@ -102,7 +102,7 @@ interface SingleParser<T> extends Parser<T> {
     filter(f: () => boolean): SingleParser<T>
 }
 
-interface VoidParser extends Parser<void> {
+interface DroppedParser extends Parser<void> {
     then<Y>(p: Parser<Y>): SingleParser<Y>;
 }
 
@@ -113,7 +113,7 @@ interface Parser<T> {
     map<Y> (f: (T) => Y): Parser<Y>;
     filter(f: (T) => boolean): Parser<T>
     match(value: T): Parser<T>;
-    drop(): VoidParser;
+    drop(): DroppedParser;
     thenReturns<Y>(value: Y): SingleParser<Y>;
     or<Y>(p: Parser<Y>): Parser<T | Y>;
     opt(): Parser<T>;
