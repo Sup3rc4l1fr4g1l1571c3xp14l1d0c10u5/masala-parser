@@ -102,12 +102,43 @@ export default class Parser {
         }
     }
 
+    _parser(p1,p2, f  ){
+        switch (p1.type){
+            case types.ARRAY:{
+                    return bindArray(this,f);
+            }
+
+            case types.SIMPLE:{
+                switch (p2.type){
+                    case types.ARRAY: return bindArray(this,f);
+                    case types.DROPPED: return bind(this,f);;
+                    case types.SIMPLE: return bindArray(this,f);
+                        throw "unknown type "+p2.type.toString();
+                }
+            }
+            case types.DROPPED:{
+                switch (p2.type){
+                    case types.ARRAY: return bindArray(this,f);;
+                    case types.DROPPED: return bindDropped(this,f);
+                    case types.SIMPLE: return bind(this,f);
+                        throw "unknown type "+p2.type.toString();
+                }
+            }
+            throw "unknown type "+p1.type.toString();
+        }
+    }
+
 
     // Parser 'a 'c => Parser 'b 'c -> Parser ('a,'b) 'c
     then(p) {
-        return this.flatMap(a =>
+
+
+
+        return this._parser(this, p, a =>
             p.map(b => {
+
                 let result = this._value(this, a, p, b);
+                console.log('using then: ',a, b, 'result:',result);
                 if (result.length === 1) {
                     return result[0];
                 } else {
@@ -222,6 +253,23 @@ function bind(self, f) {
             .fold(accept_a => bindAccepted(accept_a, f), reject_a => reject_a)
     );
 }
+
+function bindArray(self, f) {
+    return new ArrayParser((input, index = 0) =>
+        self
+            .parse(input, index)
+            .fold(accept_a => bindAccepted(accept_a, f), reject_a => reject_a)
+    );
+}
+
+function bindDropped(self, f) {
+    return new DroppedParser((input, index = 0) =>
+        self
+            .parse(input, index)
+            .fold(accept_a => bindAccepted(accept_a, f), reject_a => reject_a)
+    );
+}
+
 
 // Parser 'a 'c -> Parser 'a 'c -> Parser 'a 'c
 function choice(self, f) {
