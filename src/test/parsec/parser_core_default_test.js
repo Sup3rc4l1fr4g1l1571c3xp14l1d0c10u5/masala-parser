@@ -250,7 +250,6 @@ export default {
         );
         test.done();
     },
-
     'expect (thenLeft) to be accepted': function(test) {
         test.expect(1);
         // tests here
@@ -344,6 +343,7 @@ export default {
         );
         test.done();
     },
+
 
     'expect (thenReturns) to return b': function(test) {
         test.expect(1);
@@ -534,6 +534,7 @@ export default {
         test.done();
     },
 
+
     'expect (rep) to accepted': function(test) {
         test.expect(1);
         // tests here
@@ -571,7 +572,7 @@ export default {
         test.expect(1);
         // tests here
         test.deepEqual(
-            C.char('a').rep().parse(stream.ofString('aaaabbb')).value.array(),
+            C.char('a').rep().parse(stream.ofString('aaaabbb')).value,
             ['a', 'a', 'a', 'a'],
             'should be accepted.'
         );
@@ -618,7 +619,7 @@ export default {
             C.char('a')
                 .optrep()
                 .parse(stream.ofString('aaaabbb'))
-                .value.array(),
+                .value,
             ['a', 'a', 'a', 'a'],
             'should be accepted.'
         );
@@ -629,7 +630,7 @@ export default {
         test.expect(1);
         // tests here
         test.deepEqual(
-            C.char('a').optrep().parse(stream.ofString('bbb')).value.array(),
+            C.char('a').optrep().parse(stream.ofString('bbb')).value,
             [],
             'should be accepted.'
         );
@@ -643,10 +644,11 @@ export default {
             C.notChar('a')
                 .optrep()
                 .parse(stream.ofString('bbba'))
-                .value.array(),
+                .value,
             ['b', 'b', 'b'],
             'should be accepted.'
         );
         test.done();
     },
+
 };

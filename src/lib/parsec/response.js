@@ -74,7 +74,7 @@ class Accept extends Response {
         super();
         this.offset = offset;
         this.consumed = consumed;
-        this.value = value;
+        this.value = value; // Array for ArrayResponse, single value if not
         this.input = input;
     }
 

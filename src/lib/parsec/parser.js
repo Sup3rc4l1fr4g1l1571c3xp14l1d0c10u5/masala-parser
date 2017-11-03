@@ -18,12 +18,11 @@ import option from '../data/option';
 import list from '../data/list';
 
 import response from './response';
-import ArrayParser from "./array-parser";
 
 export const types = {
     SIMPLE: Symbol('Simple Parser'),
     ARRAY: Symbol('Array Parser'),
-    DROPPED: Symbol('Dropped Parser')
+    DROPPED: Symbol('Void Parser')
 };
 
 /**
@@ -64,11 +63,42 @@ export default class Parser {
         return this.filter(a => a === v);
     }
 
-    _arrayValue(value){
+    /*_arrayValue(value){
         switch(this.type){
             case types.ARRAY: return value;
             case types.SIMPLE: return [value];
             case types.DROPPED: return [];
+        }
+    }*/
+
+    _value(p1,a,p2,b){
+        //console.log('types:',p1.type.toString(), p2.type.toString());
+        switch (p1.type){
+            case types.ARRAY:{
+                switch (p2.type){
+                    case types.ARRAY: return [...a,...b];
+                    case types.DROPPED: return a;
+                    case types.SIMPLE: return [...a, b];
+                    throw "unknown type "+p2.type.toString();
+                }
+            }
+            case types.SIMPLE:{
+                switch (p2.type){
+                    case types.ARRAY: return [a,...b];
+                    case types.DROPPED: return a;
+                    case types.SIMPLE: return [a, b];
+                    throw "unknown type "+p2.type.toString();
+                }
+            }
+            case types.DROPPED:{
+                switch (p2.type){
+                    case types.ARRAY: return b;
+                    case types.DROPPED: return []; //dropped anyway
+                    case types.SIMPLE: return [b];
+                    throw "unknown type "+p2.type.toString();
+                }
+            }
+            throw "unknown type "+p1.type.toString();
         }
     }
 
@@ -77,7 +107,7 @@ export default class Parser {
     then(p) {
         return this.flatMap(a =>
             p.map(b => {
-                let result = [...this._arrayValue(a), ...p._arrayValue(b)];
+                let result = this._value(this, a, p, b);
                 if (result.length === 1) {
                     return result[0];
                 } else {
@@ -92,8 +122,7 @@ export default class Parser {
     }
 
     drop() {
-        this.type= types.DROPPED;
-        return this.map(() => []);
+        return new DroppedParser(this.parse);
     }
 
     // Parser 'a 'c => Parser 'b 'c -> Parser 'a 'c
@@ -128,12 +157,12 @@ export default class Parser {
 
     // Parser 'a 'c => number -> Parser (List 'a) 'c
     occurrence(occurrence) {
-        return repeatable(new ArrayParser(this.parse), l => l < occurrence, l => l === occurrence);
+        return repeatable(this, l => l < occurrence, l => l === occurrence);
     }
 
     // Parser 'a 'c => unit -> Parser (List 'a) 'c
     optrep() {
-        return repeatable(new ArrayParser(this.parse), () => true, () => true);
+        return repeatable(this, () => true, () => true);
     }
 
     // Parser 'a 'c => Parser 'b 'a -> Parser 'b 'c
@@ -217,7 +246,8 @@ function repeatable(self, occurrences, accept) {
 
         while (current.isAccepted() && occurrences(occurrence)) {
             occurrence += 1;
-            value = value.push(current.value);
+            //console.log('currentValue:', current.value, 'type:',self.type.toString(), value, 'index:', index);
+            value = value.concat(current.value);
             consumed = consumed || current.consumed;
             offset = current.offset;
             current = self.parse(input, current.offset);
@@ -239,4 +269,24 @@ function returns(v) {
     return new Parser((input, index = 0) =>
         response.accept(v, input, index, false)
     );
+}
+
+
+
+export class ArrayParser extends Parser{
+
+    constructor(parse){
+        super();
+        this.parse = parse.bind(this);
+        this.type= types.ARRAY;
+    }
+}
+
+export class DroppedParser extends Parser{
+
+    constructor(parse){
+        super(parse);
+        this.type= types.DROPPED;
+        this.map(()=>[]);
+    }
 }
